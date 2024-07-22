@@ -37,13 +37,29 @@ class OrderController extends Controller
     }
     public function index(Request $request)
     {
-        $order = Order::query();
-
+        // Retrieve the "status" parameter from the request
+        $status = $request->input('status');
+        $userId = $request->input('user_id');
+        // Initialize the query for the Order model
+        $ordersQuery = Order::query();
+        if ($userId) {
+            $ordersQuery->where('user_id', $userId);
+        }
+        // Apply the "where" clause to filter orders by userId
+        if ($status) {
+            $ordersQuery->where('status', $status);
+        }
+    
+        // Fetch the orders based on the applied filters
+        $orders = $ordersQuery->get();
+    
+        // Return a JSON response with success status and data
         return response()->json([
             'status' => 'success',
-            'data' => $order->get()
+            'data' => $orders
         ]);
     }
+    
     public function show($id)
     {
         $order = Order::find($id);
@@ -69,8 +85,8 @@ class OrderController extends Controller
                 'data' => 'order not found'
             ], 404);
         }
-        $order->fill($data);
-
+        $order->fill($data)->save();
+        
         return response()->json([
             'status' => 'success',
             'data' => $order
