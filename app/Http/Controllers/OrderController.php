@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Order;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -37,23 +38,25 @@ class OrderController extends Controller
     }
     public function index(Request $request)
     {
-        // Retrieve the "status" parameter from the request
         $status = $request->input('status');
         $userId = $request->input('user_id');
-        // Initialize the query for the Order model
         $ordersQuery = Order::query();
         if ($userId) {
             $ordersQuery->where('user_id', $userId);
         }
-        // Apply the "where" clause to filter orders by userId
-        if ($status) {
+        if ($status === 'Pending') {
             $ordersQuery->where('status', $status);
+        }else {
+            $ordersQuery->whereIn('status', ['completed', 'canceled']);
         }
     
-        // Fetch the orders based on the applied filters
+        $ordersQuery->orderBy('created_at', 'desc');
         $orders = $ordersQuery->get();
-    
-        // Return a JSON response with success status and data
+
+        foreach ($orders as $order) {
+            $order->food = getFood($order->food_id);
+        }
+
         return response()->json([
             'status' => 'success',
             'data' => $orders
